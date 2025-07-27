@@ -1,0 +1,575 @@
+Model Specs Object Structure
+Overview
+The modelSpecs object helps you provide a simpler UI experience for AI models within your application.
+
+There are 3 main fields under modelSpecs:
+
+enforce (optional; default: false)
+prioritize (optional; default: true)
+list (required)
+addedEndpoints (optional)
+Notes:
+
+If enforce is set to true, model specifications can potentially conflict with other interface settings such as modelSelect, presets, and parameters.
+The list array contains detailed configurations for each model, including presets that dictate specific behaviors, appearances, and capabilities.
+If interface fields are not specified in the configuration, having a list of model specs will disable the following interface elements:
+modelSelect
+parameters
+presets
+If you would like to enable these interface elements along with model specs, you can set them to true in the interface object.
+Example
+modelSpecs
+
+modelSpecs:
+  enforce: true
+  prioritize: true
+  list:
+    - name: "meeting-notes-gpt4"
+      label: "Meeting Notes Assistant (GPT4)"
+      default: true
+      description: "Generate meeting notes by simply pasting in the transcript from a Teams recording."
+      iconURL: "https://example.com/icon.png"
+      preset:
+        endpoint: "azureOpenAI"
+        model: "gpt-4-turbo-1106-preview"
+        maxContextTokens: 128000 # Maximum context tokens
+        max_tokens: 4096 # Maximum output tokens
+        temperature: 0.2
+        modelLabel: "Meeting Summarizer"
+        greeting: |
+          This assistant creates meeting notes based on transcripts of Teams recordings.
+          To start, simply paste the transcript into the chat box.
+        promptPrefix: |
+          Based on the transcript, create coherent meeting minutes for a business meeting. Include the following sections:
+          - Date and Attendees
+          - Agenda
+          - Minutes
+          - Action Items
+ 
+          Focus on what items were discussed and/or resolved. List any open action items.
+          The format should be a bulleted list of high level topics in chronological order, and then one or more concise sentences explaining the details.
+          Each high level topic should have at least two sub topics listed, but add as many as necessary to support the high level topic. 
+ 
+          - Do not start items with the same opening words.
+ 
+          Take a deep breath and be sure to think step by step.
+Top-level Fields
+enforce
+Key	Type	Description	Example
+enforce	Boolean	Determines whether the model specifications should strictly override other configuration settings.	Setting this to `true` can lead to conflicts with interface options if not managed carefully.
+Default: false
+
+Example:
+
+modelSpecs / enforce
+
+modelSpecs:
+  enforce: true
+prioritize
+Key	Type	Description	Example
+prioritize	Boolean	Specifies if model specifications should take priority over the default configuration when both are applicable.	When set to `true`, it ensures that a modelSpec is always selected in the UI. Doing this may prevent users from selecting different endpoints for the selected spec.
+Default: true
+
+Example:
+
+modelSpecs / prioritize
+
+modelSpecs:
+  prioritize: false
+addedEndpoints
+Key	Type	Description	Example
+addedEndpoints	Array of Strings	Allows specific endpoints (e.g., "openAI", "google") to be selectable in the UI alongside the defined model specs.	Requires `interface.modelSelect` to be `true`. If this field is used and `interface.modelSelect` is not explicitly set, `modelSelect` will default to `true`.
+Default: [] (empty list)
+
+Note: Must be one of the following:
+
+openAI, azureOpenAI, google, anthropic, assistants, azureAssistants, bedrock
+Example:
+
+modelSpecs / addedEndpoints
+
+modelSpecs:
+  # ... other modelSpecs fields
+  addedEndpoints:
+    - openAI
+    - google
+list
+Required
+
+Key	Type	Description	Example
+list	Array of Objects	Contains a list of individual model specifications detailing various configurations and behaviors.	Each object in the list details the configuration for a specific model, including its behaviors, appearance, and capabilities related to the application's functionality.
+Model Spec (List Item)
+Within each Model Spec, or each list item, you can configure the following fields:
+
+name
+Key	Type	Description	Example
+name	String	Unique identifier for the model.	No default. Must be specified.
+Description:
+Unique identifier for the model.
+
+label
+Key	Type	Description	Example
+label	String	A user-friendly name or label for the model, shown in the header dropdown.	No default. Optional.
+Description:
+A user-friendly name or label for the model, shown in the header dropdown.
+
+default
+Key	Type	Description	Example
+default	Boolean	Specifies if this model spec is the default selection, to be auto-selected on every new chat.	
+Description:
+Specifies if this model spec is the default selection, to be auto-selected on every new chat.
+
+iconURL
+Key	Type	Description	Example
+iconURL	String	URL or a predefined endpoint name for the model's icon.	No default. Optional.
+Description:
+URL or a predefined endpoint name for the model’s icon.
+
+description
+Key	Type	Description	Example
+description	String	A brief description of the model and its intended use or role, shown in the header dropdown menu.	No default. Optional.
+Description:
+A brief description of the model and its intended use or role, shown in the header dropdown menu.
+
+showIconInMenu
+Key	Type	Description	Example
+showIconInMenu	Boolean	Controls whether the model's icon appears in the header dropdown menu.	
+Description:
+Controls whether the model’s icon appears in the header dropdown menu. Defaults to true.
+
+showIconInHeader
+Key	Type	Description	Example
+showIconInHeader	Boolean	Controls whether the model's icon appears in the header dropdown button, left of its name.	
+Description:
+Controls whether the model’s icon appears in the header dropdown button, left of its name. Defaults to true.
+
+preset
+Key	Type	Description	Example
+preset	Object	Detailed preset configurations that define the behavior and capabilities of the model.	See "Preset Object Structure" below.
+Description:
+Detailed preset configurations that define the behavior and capabilities of the model (see Preset Object Structure below).
+
+Preset Fields
+The preset field for a modelSpecs.list item is made up of a comprehensive configuration blueprint for AI models within the system. It is designed to specify the operational settings of AI models, tailoring their behavior, outputs, and interactions with other system components and endpoints.
+
+System Options
+endpoint
+Required
+
+Accepted Values:
+
+openAI
+azureOpenAI
+google
+anthropic
+assistants
+azureAssistants
+bedrock
+agents
+Note: If you are using a custom endpoint, the endpoint value must match the defined custom endpoint name exactly.
+
+Key	Type	Description	Example
+endpoint	Enum (EModelEndpoint) or String (nullable)	Specifies the endpoint the model communicates with to execute operations. This setting determines the external or internal service that the model interfaces with.	
+Example:
+
+modelSpecs / list / {spec_item} / preset / endpoint
+
+preset:
+  endpoint: "openAI"
+modelLabel
+Key	Type	Description	Example
+modelLabel	String (nullable)	The label used to identify the model in user interfaces or logs. It provides a human-readable name for the model, which is displayed in the UI, as well as made aware to the AI.	None
+Default: None
+
+Example:
+
+modelSpecs / list / {spec_item} / preset / modelLabel
+
+preset:
+  modelLabel: "Customer Support Bot"
+greeting
+Key	Type	Description	Example
+greeting	String	A predefined message that is visible in the UI before a new chat is started. This is a good way to provide instructions to the user, or to make the interface seem more friendly and accessible.	
+Default: None
+
+Example:
+
+modelSpecs / list / {spec_item} / preset / greeting
+
+preset:
+  greeting: "This assistant creates meeting notes based on transcripts of Teams recordings. To start, simply paste the transcript into the chat box."
+promptPrefix
+Key	Type	Description	Example
+promptPrefix	String (nullable)	A static text prepended to every prompt sent to the model, setting a consistent context for responses.	When using "assistants" as the endpoint, this becomes the OpenAI field `additional_instructions`.
+Default: None
+
+Example 1:
+
+modelSpecs / list / {spec_item} / preset / promptPrefix
+
+preset:
+  promptPrefix: "As a financial advisor, ..."
+Example 2:
+
+modelSpecs / list / {spec_item} / preset / promptPrefix
+
+preset:
+  promptPrefix: |
+    Based on the transcript, create coherent meeting minutes for a business meeting. Include the following sections:
+    - Date and Attendees
+    - Agenda
+    - Minutes
+    - Action Items
+ 
+    Focus on what items were discussed and/or resolved. List any open action items.
+    The format should be a bulleted list of high level topics in chronological order, and then one or more concise sentences explaining the details.
+    Each high level topic should have at least two sub topics listed, but add as many as necessary to support the high level topic. 
+ 
+    - Do not start items with the same opening words.
+ 
+    Take a deep breath and be sure to think step by step.
+resendFiles
+Key	Type	Description	Example
+resendFiles	Boolean	Indicates whether files should be resent in scenarios where persistent sessions are not maintained.	
+Default: true
+
+Example:
+
+modelSpecs / list / {spec_item} / preset / resendFiles
+
+preset:
+  resendFiles: true
+imageDetail
+Accepted Values:
+
+low
+auto
+high
+Key	Type	Description	Example
+imageDetail	Enum (eImageDetailSchema)	Specifies the level of detail required in image analysis tasks, applicable to models with vision capabilities (OpenAI spec).	
+Default: "auto"
+
+Example:
+
+modelSpecs / list / {spec_item} / preset / imageDetail
+
+preset:
+  imageDetail: "high"
+maxContextTokens
+Key	Type	Description	Example
+maxContextTokens	Number	The maximum number of context tokens to provide to the model.	Useful if you want to limit the maximum context for this preset.
+Example:
+
+modelSpecs / list / {spec_item} / preset / maxContextTokens
+
+preset:
+  maxContextTokens: 4096
+Agent Options
+Note that these options are only applicable when using the agents endpoint.
+
+You should exclude any model options and defer to the agent’s configuration as defined in the UI.
+
+agent_id
+Key	Type	Description	Example
+agent_id	String	Identification of an assistant.	
+Example:
+
+modelSpecs / list / {spec_item} / preset / agent_id
+
+preset:
+  agent_id: "agent_someUniqueId"
+Assistant Options
+Note that these options are only applicable when using the assistants or azureAssistants endpoint.
+
+Similar to Agents, you should exclude any model options and defer to the assistant’s configuration.
+
+assistant_id
+Key	Type	Description	Example
+assistant_id	String	Identification of an assistant.	
+Example:
+
+modelSpecs / list / {spec_item} / preset / assistant_id
+
+preset:
+  assistant_id: "asst_someUniqueId"
+instructions
+Note: this is distinct from promptPrefix, as this overrides existing assistant instructions for current runs.
+
+Only use this if you want to override the assistant’s core instructions.
+
+Use promptPrefix for additional_instructions.
+
+More information:
+
+https://platform.openai.com/docs/api-reference/models#runs-createrun-instructions
+https://platform.openai.com/docs/api-reference/runs/createRun#runs-createrun-additional_instructions
+Key	Type	Description	Example
+instructions	String	Overrides the assistant's default instructions.	
+Example:
+
+modelSpecs / list / {spec_item} / preset / instructions
+
+preset:
+  instructions: "Please handle customer queries regarding order status."
+append_current_datetime
+Adds the current date and time to additional_instructions for each run. Does not overwrite promptPrefix, but adds to it.
+
+Key	Type	Description	Example
+append_current_datetime	Boolean	Adds the current date and time to `additional_instructions` as defined by `promptPrefix`	
+Example:
+
+modelSpecs / list / {spec_item} / preset / append_current_datetime
+
+preset:
+  append_current_datetime: true
+Model Options
+Note: Each parameter below includes a note on which endpoints support it.
+OpenAI / AzureOpenAI / Custom typically support temperature, presence_penalty, frequency_penalty, stop, top_p, max_tokens.
+Google / Anthropic typically support topP, topK, maxOutputTokens, promptCache (Anthropic only).
+Bedrock supports region, maxTokens, and a few others.
+
+model
+Supported by: All endpoints (except agents)
+
+Key	Type	Description	Example
+model	String (nullable)	The model name to use for the preset, matching a configured model under the chosen endpoint.	None
+Default: None
+
+Example:
+
+preset:
+  model: "gpt-4-turbo"
+
+temperature
+Supported by: openAI, azureOpenAI, google (as temperature), anthropic (as temperature), and custom (OpenAI-like)
+
+Key	Type	Description	Example
+temperature	Number	Controls how deterministic or “creative” the model responses are.	
+Example:
+
+preset:
+  temperature: 0.7
+
+presence_penalty
+Supported by: openAI, azureOpenAI, custom (OpenAI-like)
+Not typically used by Google/Anthropic/Bedrock
+
+Key	Type	Description	Example
+presence_penalty	Number	Penalty for repetitive tokens, encouraging exploration of new topics.	
+Example:
+
+preset:
+  presence_penalty: 0.3
+
+frequency_penalty
+Supported by: openAI, azureOpenAI, custom (OpenAI-like)
+Not typically used by Google/Anthropic/Bedrock
+
+Key	Type	Description	Example
+frequency_penalty	Number	Penalty for repeated tokens, reducing redundancy in responses.	
+Example:
+
+preset:
+  frequency_penalty: 0.5
+
+stop
+Supported by: openAI, azureOpenAI, custom (OpenAI-like)
+Not typically used by Google/Anthropic/Bedrock
+
+Key	Type	Description	Example
+stop	Array of Strings	Stop tokens for the model, instructing it to end its response if encountered.	
+Example:
+
+preset:
+  stop:
+    - "END"
+    - "STOP"
+
+top_p
+Supported by: openAI, azureOpenAI, custom (OpenAI-like)
+Google/Anthropic often use topP (capital “P”) instead of top_p.
+
+Key	Type	Description	Example
+top_p	Number	Nucleus sampling parameter (0-1), controlling the randomness of tokens.	
+Example:
+
+preset:
+  top_p: 0.9
+
+topP
+Supported by: google & anthropic
+(similar purpose to top_p, but named differently in those APIs)
+
+Key	Type	Description	Example
+topP	Number	Nucleus sampling parameter for Google/Anthropic endpoints.	
+Example:
+
+preset:
+  topP: 0.8
+
+topK
+Supported by: google & anthropic
+(k-sampling limit on the next token distribution)
+
+Key	Type	Description	Example
+topK	Number	Limits the next token selection to the top K tokens.	
+Example:
+
+preset:
+  topK: 40
+
+max_tokens
+Supported by: openAI, azureOpenAI, custom (OpenAI-like)
+For Google/Anthropic, use maxOutputTokens or maxTokens (depending on the endpoint).
+
+Key	Type	Description	Example
+max_tokens	Number	The maximum number of tokens in the model response.	
+Example:
+
+preset:
+  max_tokens: 4096
+
+maxOutputTokens
+Supported by: google, anthropic
+Equivalent to max_tokens for these providers.
+
+Key	Type	Description	Example
+maxOutputTokens	Number	The maximum number of tokens in the response (Google/Anthropic).	
+Example:
+
+preset:
+  maxOutputTokens: 2048
+
+promptCache
+Supported by: anthropic
+(Toggle Anthropic’s “prompt-caching” feature)
+
+Key	Type	Description	Example
+promptCache	Boolean	Enables or disables Anthropic’s built-in prompt caching.	
+Default: true
+
+Example:
+
+preset:
+  promptCache: true
+
+reasoning_effort
+Accepted Values:
+
+None
+Low
+Medium
+High
+Supported by: openAI, azureOpenAI, custom (OpenAI-like)
+
+Key	Type	Description	Example
+reasoning_effort	String	Controls the reasoning effort level for the model.	
+Default: "None"
+
+Example:
+
+preset:
+  reasoning_effort: "low"
+
+reasoning_summary
+Accepted Values:
+
+None
+Auto
+Concise
+Detailed
+Supported by: openAI, azureOpenAI, custom (OpenAI-like)
+
+Key	Type	Description	Example
+reasoning_summary	String	Sets reasoning summary preferences for the model.	
+Default: "None"
+
+Example:
+
+preset:
+  reasoning_summary: "detailed"
+
+useResponsesApi
+Supported by: openAI, azureOpenAI, custom (OpenAI-like)
+
+Key	Type	Description	Example
+useResponsesApi	Boolean	Enables or disables the responses API for the model.	
+Default: false
+
+Example:
+
+preset:
+  useResponsesApi: true
+
+web_search
+Supported by: openAI, azureOpenAI, custom (OpenAI-like), google, anthropic
+
+Key	Type	Description	Example
+web_search	Boolean	Enables or disables web search functionality for the model.	
+Default: false
+
+Note: For Google endpoints, this parameter appears as Grounding with Google Search in the actual panel but controls web_search in the implementation.
+
+Example:
+
+preset:
+  web_search: true
+
+disableStreaming
+Supported by: openAI, azureOpenAI, custom (OpenAI-like)
+
+Key	Type	Description	Example
+disableStreaming	Boolean	Disables streaming responses from the model.	
+Default: false
+
+Example:
+
+preset:
+  disableStreaming: true
+
+thinkingBudget
+Supported by: google, anthropic, bedrock (Anthropic models)
+
+Key	Type	Description	Example
+thinkingBudget	Number or String	Controls the number of thinking tokens the model can use for internal reasoning. Larger budgets can improve response quality for complex problems.	
+Default: "Auto (-1)" (Google), 2000 (Anthropic, Bedrock (Anthropic models))
+
+Example:
+
+preset:
+  thinkingBudget: "2000"
+
+thinking
+Supported by: google, anthropic, bedrock (Anthropic models)
+
+Key	Type	Description	Example
+thinking	Boolean	Indicates whether the model should spend time thinking before generating a response.	
+Default: true
+
+Example:
+
+preset:
+  thinking: true
+
+region
+Supported by: bedrock
+(Used to specify an AWS region for Amazon Bedrock)
+
+Key	Type	Description	Example
+region	String	AWS region for Amazon Bedrock endpoints.	
+Example:
+
+preset:
+  region: "us-east-1"
+
+maxTokens
+Supported by: bedrock
+(Used in place of max_tokens)
+
+Key	Type	Description	Example
+maxTokens	Number	Maximum output tokens for Amazon Bedrock endpoints.	
+Example:
+
+preset:
+  maxTokens: 1024
+

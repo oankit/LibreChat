@@ -1,0 +1,136 @@
+# Docker Compose configuration for Wren Engine integration with LibreChat
+# This file extends the main docker-compose.yml to include Wren Engine services
+
+version: '3.8'
+
+services:
+  # Wren Engine Core Service
+  wren-engine:
+    image: ghcr.io/canner/wren-engine:latest
+    container_name: wren-engine
+    ports:
+      - "8080:8080"
+    environment:
+      - WREN_DATASOURCE_TYPE=postgres
+      - WREN_POSTGRES_HOST=postgres
+      - WREN_POSTGRES_PORT=5432
+      - WREN_POSTGRES_USER=${POSTGRES_USER:-librechat}
+      - WREN_POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-librechat}
+      - WREN_POSTGRES_DATABASE=${POSTGRES_DB:-librechat}
+    depends_on:
+      - postgres
+    networks:
+      - librechat_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Wren Ibis Server (Python-based query engine)
+  wren-ibis:
+    build:
+      context: ./wren-engine/ibis-server
+      dockerfile: Dockerfile
+    container_name: wren-ibis
+    ports:
+      - "8000:8000"
+    environment:
+      - WREN_ENGINE_ENDPOINT=http://wren-engine:8080
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-librechat}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-librechat}
+      - POSTGRES_DATABASE=${POSTGRES_DB:-librechat}
+    depends_on:
+      - wren-engine
+      - postgres
+    networks:
+      - librechat_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PostgreSQL database (if not already defined in main docker-compose.yml)
+  postgres:
+    image: postgres:15-alpine
+    container_name: librechat-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-librechat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-librechat}
+      POSTGRES_DB: ${POSTGRES_DB:-librechat}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./wren-engine/docker/init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - librechat_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-librechat}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (if not already defined in main docker-compose.yml)
+  redis:
+    image: redis:7-alpine
+    container_name: librechat-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - librechat_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # LibreChat API (extended to include Wren Engine environment variables)
+  api:
+    extends:
+      file: docker-compose.yml
+      service: api
+    environment:
+      # Existing LibreChat environment variables
+      - NODE_ENV=production
+      - MONGO_URI=${MONGO_URI:-mongodb://mongodb:27017/LibreChat}
+      - REDIS_URI=${REDIS_URI:-redis://redis:6379}
+      
+      # Wren Engine specific environment variables
+      - WREN_URL=wren-ibis:8000
+      - WREN_ENGINE_URL=wren-engine:8080
+      
+      # Salesforce credentials for Wren Engine
+      - SALESFORCE_INSTANCE_URL=${SALESFORCE_INSTANCE_URL}
+      - SALESFORCE_USERNAME=${SALESFORCE_USERNAME}
+      - SALESFORCE_PASSWORD=${SALESFORCE_PASSWORD}
+      - SALESFORCE_SECURITY_TOKEN=${SALESFORCE_SECURITY_TOKEN}
+      - SALESFORCE_CLIENT_ID=${SALESFORCE_CLIENT_ID}
+      - SALESFORCE_CLIENT_SECRET=${SALESFORCE_CLIENT_SECRET}
+      - SALESFORCE_LOGIN_URL=${SALESFORCE_LOGIN_URL:-https://login.salesforce.com}
+    depends_on:
+      - wren-engine
+      - wren-ibis
+      - postgres
+      - redis
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  librechat_network:
+    driver: bridge

@@ -12,7 +12,7 @@ cache: true
 
 # Custom interface configuration
 interface:
-  customWelcome: "Welcome to LibreChat! Enjoy your experience."
+  customWelcome: "Welcome to WeasleyAI! Enjoy your experience."
   # MCP Servers UI configuration
   mcpServers:
     placeholder: 'MCP Servers'
